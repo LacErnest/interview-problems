@@ -34,7 +34,7 @@ function move_files_to_subfolders_recursive(string $main_folder, int $max_files_
     mkdir($subfolder);
   }
 
-  echo "current file : " . $file;
+  echo "current file : " . $file . "\r\n";
   // Open the file.
   $handle = fopen($main_folder . '/' . $file, 'r+');
 
