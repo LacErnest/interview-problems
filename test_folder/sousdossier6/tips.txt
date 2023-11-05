@@ -1,0 +1,22 @@
+-- The first thing you should know is that, you should always use typing function.
+Typing function is function that use type for their parameter and for their return.
+
+For example: 
+function convertStringToArray(array $array): string
+So in precise the type of my parameters and the type of what it should return, it is very important
+
+-- The second thing is that, you should use correct naming for your variable of your function. when we look at your variable name, we should know the goal or the usage of your variable. 
+For example: $arrayOfSubstrings: we clearly understand that it is an array of substring. 
+$maxValue: we understand it is the maximum value of somthing. Etc...
+
+-- The third thing is that, you should know basic php function. They will not accept that you have 6 years of experience and you don't know array_sum, max(), count(), array_unique, etc... i mean knowing some php functions, not all but you should not need to search about them. FOr the 2 first exercices you should know most of php functions you will need for that
+
+-- Fourth: always have checking for your variable. FOr example, yesterday, you have use json_decode($json); You did not even check if your $json is a string, it is not good, this can crash your program, so you need to check first or convert it
+
+if(is_string($json))... or $jsonStringify = (string)$json; before calling json_decode. ALways
+
+-- Fifth: they like recursive thinking, please if you face problem that you think it can be redundant, think recursively and implement it. Yesterday you did it, but you forgot to make a breakpoint, recursive always have a breakpoint. Like 
+
+if(is_object($json){ we recall the function
+else 
+we return the value ...
