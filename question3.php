@@ -8,79 +8,62 @@
  * columns(name, price, description, quantity, createdAt, createdBy). 
  * Explain your logic and use good practice (DRY, design pattern, type hinting)
  */
-class Database {
+class DBConn {
     private static $instance = null;
-    private $pdo;
+    private $conn;
 
-    private function __construct($host, $db, $user, $pass, $charset, $options) {
-        $this->pdo = new PDO("mysql:host=$host;dbname=$db;charset=$charset", $user, $pass, $options);
+    private function __construct() {
+        $host = 'localhost';
+        $db   = 'database';
+        $user = 'username';
+        $pass = 'password';
+        $charset = 'utf8mb4';
+
+        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ];
+        $this->conn = new PDO($dsn, $user, $pass, $options);
     }
 
-    public static function getInstance($host, $db, $user, $pass, $charset, $options) {
-        if (self::$instance == null) {
-            self::$instance = new Database($host, $db, $user, $pass, $charset, $options);
+    public static function getInstance() {
+        if(self::$instance == null) {
+            self::$instance = new DBConn();
         }
+
         return self::$instance;
     }
 
-    public function getPdo() {
-        return $this->pdo;
+    public function getConnection() {
+        return $this->conn;
     }
 }
 
-// Database connection parameters
-$host = 'localhost';
-$db   = 'database_name';
-$user = 'username';
-$pass = 'password';
-$charset = 'utf8mb4';
+function getRecords($pdo, $limit, $offset) {
+    $stmt = $pdo->prepare('SELECT name, price, description, quantity, createdAt, createdBy FROM table LIMIT :limit OFFSET :offset');
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 
-// PDO options
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
-
-// Get the PDO instance
-$pdo = Database::getInstance($host, $db, $user, $pass, $charset, $options)->getPdo();
-
-// Open the CSV file
-$file = fopen('output.csv', 'w');
-
-// Write the header row to the CSV file
-fputcsv($file, ['name', 'price', 'description', 'quantity', 'createdAt', 'createdBy']);
-
-// Query parameters
-$limit = 1000; // Fetch records in chunks of 1000
-$offset = 0;
-
-while (true) {
-  // Prepare the SQL query
-  $stmt = $pdo->prepare("SELECT name, price, description, quantity, createdAt, createdBy FROM table_name LIMIT :offset, :limit");
-  $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-  $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-
-  // Execute the SQL query
-  $stmt->execute();
-
-  // Fetch the records
-  $records = $stmt->fetchAll();
-
-  // If no records were fetched, break the loop
-  if (!$records) {
-    break;
-  }
-
-  // Write the records to the CSV file
-  foreach ($records as $record) {
-    fputcsv($file, $record);
-  }
-
-  // Increase the offset for the next query
-  $offset += $limit;
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        yield $row;
+    }
 }
 
-// Close the CSV file
-fclose($file);
-?>
+function createCSV($pdo, $filename) {
+    $file = fopen($filename, 'w');
+    $limit = 1000;
+
+    for($offset = 0; $offset < 10000; $offset += $limit) {
+        foreach(getRecords($pdo, $limit, $offset) as $row) {
+            fputcsv($file, $row);
+        }
+    }
+
+    fclose($file);
+}
+
+$pdo = DBConn::getInstance()->getConnection();
+createCSV($pdo, 'output.csv');
